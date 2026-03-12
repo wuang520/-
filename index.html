@@ -1,0 +1,151 @@
+<!doctype html>
+<html>
+<head>
+    <meta charset="utf-8" />
+    <title>全屏穿透鼠标拖尾</title>
+    <style>
+        * { margin: 0; padding: 0; pointer-events: none !important; }
+        html, body {
+            width: 100vw; height: 100vh;
+            overflow: hidden; background: transparent !important;
+        }
+        canvas {
+            position: fixed; top: 0; left: 0;
+            width: 100%; height: 100%;
+            background: transparent !important;
+        }
+    </style>
+</head>
+<body>
+    <canvas id="trailCanvas"></canvas>
+    <script>
+        // 初始化画布
+        const canvas = document.getElementById('trailCanvas');
+        const ctx = canvas.getContext('2d');
+        let screenWidth = window.innerWidth;
+        let screenHeight = window.innerHeight;
+        setCanvasSize(screenWidth, screenHeight);
+
+        // ========== 拖尾配置 ==========
+        const settings = {
+            friction: 0.41,          // 摩擦力
+            trailsCount: 15,          // 拖尾数量（可保留原数或适当减少）
+            size: 15,                 // 🔥 每个拖尾的粒子数（原为30，减半）
+            dampening: 0.5,
+            tension: 1
+        };
+
+        // 全局色调控制（hue 值从 0 到 360 缓慢循环）
+        let hue = 0;                  // 起始色调
+        const hueSpeed = 0.5;         // 每帧增加的速度（值越大颜色变化越快）
+
+        // ========== 拖尾粒子类 ==========
+        class Tendril {
+            constructor() {
+                this.spring = 0.45 + Math.random() * 0.1 - 0.05;
+                this.friction = settings.friction + Math.random() * 0.01 - 0.005;
+                this.nodes = Array(settings.size).fill().map(() => ({ x: 0, y: 0, vx: 0, vy: 0 }));
+            }
+
+            // 更新粒子位置
+            update(x, y) {
+                const node = this.nodes[0];
+                node.vx += (x - node.x) * this.spring;
+                node.vy += (y - node.y) * this.spring;
+
+                for (let i = 0; i < this.nodes.length; i++) {
+                    const curr = this.nodes[i];
+                    if (i > 0) {
+                        const prev = this.nodes[i - 1];
+                        curr.vx += (prev.x - curr.x) * this.spring;
+                        curr.vy += (prev.y - curr.y) * this.spring;
+                        curr.vx += prev.vx * settings.dampening;
+                        curr.vy += prev.vy * settings.dampening;
+                    }
+                    curr.vx *= this.friction;
+                    curr.vy *= this.friction;
+                    curr.x += curr.vx;
+                    curr.y += curr.vy;
+                    this.spring *= settings.tension;
+                }
+            }
+
+            // 绘制拖尾（使用全局色调 hue）
+            draw() {
+                ctx.beginPath();
+                ctx.moveTo(this.nodes[0].x, this.nodes[0].y);
+                for (let i = 1; i < this.nodes.length - 1; i++) {
+                    const a = this.nodes[i];
+                    const b = this.nodes[i + 1];
+                    const x = (a.x + b.x) / 2;
+                    const y = (a.y + b.y) / 2;
+                    ctx.quadraticCurveTo(a.x, a.y, x, y);
+                }
+                const last = this.nodes[this.nodes.length - 1];
+                ctx.quadraticCurveTo(
+                    this.nodes[this.nodes.length - 2].x,
+                    this.nodes[this.nodes.length - 2].y,
+                    last.x, last.y
+                );
+
+                // 🔥 使用全局色调，固定饱和度和亮度，透明度稍高一点让拖尾更明显
+                ctx.strokeStyle = `hsla(${hue}, 90%, 60%, 0.35)`;
+                ctx.lineWidth = 2;
+                ctx.stroke();
+            }
+        }
+
+        // ========== 初始化拖尾 ==========
+        const trails = [];
+        const centerX = screenWidth / 2;
+        const centerY = screenHeight / 2;
+        for (let i = 0; i < settings.trailsCount; i++) {
+            const trail = new Tendril();
+            trail.nodes.forEach(node => {
+                node.x = centerX;
+                node.y = centerY;
+            });
+            trails.push(trail);
+        }
+
+        // ========== IPC 通信 ==========
+        const { ipcRenderer } = require('electron');
+
+        ipcRenderer.on('mouse-position', (e, x, y) => {
+            trails.forEach(trail => trail.update(x, y));
+            drawTrails();
+
+            // 🔥 每收到一次鼠标位置（即每帧）更新一次色调，实现缓慢变化
+            hue += hueSpeed;
+            if (hue >= 360) hue -= 360;
+        });
+
+        ipcRenderer.on('screen-resize', (e, w, h) => {
+            screenWidth = w;
+            screenHeight = h;
+            setCanvasSize(w, h);
+            // 重新将拖尾居中
+            trails.forEach(trail => {
+                trail.nodes.forEach(node => {
+                    node.x = w / 2;
+                    node.y = h / 2;
+                });
+            });
+        });
+
+        // ========== 辅助函数 ==========
+        function setCanvasSize(w, h) {
+            canvas.width = w;
+            canvas.height = h;
+            canvas.style.width = `${w}px`;
+            canvas.style.height = `${h}px`;
+        }
+
+        function drawTrails() {
+            ctx.clearRect(0, 0, canvas.width, canvas.height);
+            ctx.globalCompositeOperation = 'lighter';
+            trails.forEach(trail => trail.draw());
+        }
+    </script>
+</body>
+</html>

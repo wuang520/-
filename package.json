@@ -1,0 +1,24 @@
+{
+  "name": "mouse-trail",
+  "version": "1.0.0",
+  "main": "main.js",
+  "scripts": {
+    "start": "electron .",
+    "build": "electron-builder"
+  },
+  "build": {
+    "appId": "com.mousetrail.app",
+    "productName": "鼠标拖尾特效",
+    "win": {
+      "target": "portable",
+      "asar": false
+    },
+    "directories": {
+      "output": "dist"
+    }
+  },
+  "devDependencies": {
+    "electron": "^28.0.0",
+    "electron-builder": "^24.13.3"
+  }
+}
