@@ -246,4 +246,4 @@ main.js:
 	
 	链接: https://pan.baidu.com/s/1yRQgSZrI7JM-Z_C-XaiRkA?pwd=8qx7 提取码: 8qx7
 	
-备注：新人第一次使用，文章太丑别介意
+备注：新人第一次使用，文章太丑别介意，退出程序：任何位置按下：ctrl+Alt+x 或任务管理器关闭
