@@ -1,6 +1,11 @@
 效果：
 	<img width="1151" height="535" alt="image" src="https://github.com/user-attachments/assets/12eca776-b2f6-41b7-9aee-62d992ef5338" />
 
+
+AI 辅助编写
+
+仅用于个人非商用
+
 index.html:
 
     一、整体思路
@@ -237,6 +242,8 @@ main.js:
 
 	文件大于25MB无法上传只能放在百度网盘里啦：
 
+	通过网盘分享的文件：鼠标拖尾.zip
 	
+	链接: https://pan.baidu.com/s/1yRQgSZrI7JM-Z_C-XaiRkA?pwd=8qx7 提取码: 8qx7
 	
 备注：新人第一次使用，文章太丑别介意
